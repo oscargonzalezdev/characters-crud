@@ -1,22 +1,24 @@
 const router = require("express").Router();
+const { default: axios } = require("axios");
+const { response } = require("express");
 const Character = require("../models/Character.model");
 
+// Route: GET /characters | display list of characters
 router.get("/", (req, res, next) => {
-  Character.find()
-    .then( charactersFromDB => {
-      res.render("characters/characters-list", {characters: charactersFromDB});
+  axios.get("https://ih-crud-api.herokuapp.com/characters")
+    .then(response => {
+      res.render("characters/characters-list", { characters: response.data });
+      // console.log(response.data);
     })
-    .catch(err => {
-      console.log('Error getting characters from DB...', err);
-    })
+    .catch(err => console.log('Error getting characters from API', err));
 });
 
-
+// Route: GET /characters/create | display a form to create new character
 router.get("/create", (req, res, next) => {
-  res.render("characters/character-create");
+  return res.render("characters/character-create");
 });
 
-
+// Route: POST /characters/create | send post request to create new character
 router.post('/create', (req, res, next) => {
 
   const characterDetails = {
@@ -25,35 +27,37 @@ router.post('/create', (req, res, next) => {
     weapon: req.body.weapon,
   }
 
-  Character.create(characterDetails)
-    .then( character => {
+  axios.post("https://ih-crud-api.herokuapp.com/characters", characterDetails)
+    .then(character => {
+      console.log(character.data);
       res.redirect("/characters");
     })
-    .catch( err => {
+    .catch(err => {
       console.log('Error creating new character...', err);
     })
 })
 
-
+// Route: GET /characters/:characterId | display details of a character
 router.get("/:characterId", (req, res, next) => {
-  Character.findById(req.params.characterId)
-    .then( character => {
-      res.render("characters/character-details", character);
+  axios.get(`https://ih-crud-api.herokuapp.com/characters/${req.params.characterId}`)
+    .then(response => {
+      res.render("characters/character-details", response.data);
     })
     .catch();
 });
 
-
+// Route: GET /characters/:characterId/edit | display form to edit a character
 router.get("/:characterId/edit", (req, res, next) => {
-  Character.findById(req.params.characterId)
-    .then( (characterDetails) => {
-      res.render("characters/character-edit", characterDetails);
+  axios.get(`https://ih-crud-api.herokuapp.com/characters/${req.params.characterId}`)
+    .then(characterDetails => {
+      res.render("characters/character-edit", characterDetails.data);
     })
-    .catch( err => {
-      console.log("Error getting character details from DB...", err);
+    .catch(err => {
+      console.log("Error getting character details from API", err);
     });
 });
 
+// Route: GET /characters/:characterId/edit | update a character
 router.post("/:characterId/edit", (req, res, next) => {
   const characterId = req.params.characterId;
 
@@ -63,18 +67,18 @@ router.post("/:characterId/edit", (req, res, next) => {
     weapon: req.body.weapon,
   }
 
-  Character.findByIdAndUpdate(characterId, newDetails)
-    .then( () => {
+  axios.put(`https://ih-crud-api.herokuapp.com/characters/${characterId}`, newDetails)
+    .then(() => {
       res.redirect(`/characters/${characterId}`);
     })
-    .catch( err => {
+    .catch(err => {
       console.log("Error updating character...", err);
     });
 });
 
-
+// Route: DELETE /:characterId/delete | delete character
 router.post("/:characterId/delete", (req, res, next) => {
-  Character.findByIdAndDelete(req.params.characterId)
+  axios.delete(`https://ih-crud-api.herokuapp.com/characters/${req.params.characterId}`)
     .then(() => {
       res.redirect("/characters");
     })
